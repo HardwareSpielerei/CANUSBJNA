@@ -21,7 +21,7 @@ Using the Library
 
 * [Getting started](https://github.com/HardwareSpielerei/CANUSBJNA/wiki/Getting-Started)
 * [LibraryTest example program](https://github.com/HardwareSpielerei/CANUSBJNA/wiki/LibraryTest-example-program)
-* t. b. c.
+* [Logger demo application](https://github.com/HardwareSpielerei/CANUSBJNA/wiki/Logger-demo-application)
 
 License
 =======
