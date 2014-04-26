@@ -24,6 +24,9 @@
 
 package de.hardwarespielerei.can.canusb.jna;
 
+import java.util.Arrays;
+import java.util.List;
+
 import com.sun.jna.Callback;
 import com.sun.jna.Library;
 import com.sun.jna.Native;
@@ -220,6 +223,13 @@ public interface NativeAccess extends Library
 		 * Databytes 0..7
 		 */
 		public byte data[] = new byte[8];
+
+		@Override
+		protected List<String> getFieldOrder()
+		{
+			return Arrays.asList(new String[] { "id", "timestamp", "flags",
+					"length", "data" });
+		}
 	}
 
 	/**

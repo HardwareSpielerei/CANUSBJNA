@@ -44,7 +44,7 @@ public interface Version
 	/**
 	 * Build number. It is increased for every release.
 	 */
-	public static final int BUILD = 1000;
+	public static final int BUILD = 1001;
 
 	/**
 	 * Version string.

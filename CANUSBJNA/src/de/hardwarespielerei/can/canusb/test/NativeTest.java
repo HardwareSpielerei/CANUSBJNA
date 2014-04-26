@@ -51,10 +51,14 @@ public class NativeTest
 	public static void main(String[] args) throws IOException
 	{
 		System.out.println("################################");
-		System.out.println("# CANUSB Native Test V" + Version.VERSION + " #");
+		System.out.println("# CANUSB Native Test           #");
 		System.out.println("# (C) 2014 by Gabriel Schmidt  #");
 		System.out.println("#  @see hardwarespielerei.de   #");
 		System.out.println("################################");
+		System.out.println();
+		System.out.println("CANUSB     V" + Version.VERSION);
+		System.out.println("JNA        V" + com.sun.jna.Native.VERSION);
+		System.out.println("JNA NATIVE V" + com.sun.jna.Native.VERSION_NATIVE);
 		System.out.println();
 		if (Platform.isWindows())
 		{

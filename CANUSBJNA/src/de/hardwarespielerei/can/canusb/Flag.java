@@ -68,7 +68,7 @@ public enum Flag
 	 * adapter a send of a frame on one channel will be seen on the other
 	 * channels. By setting this flag this is prevented.
 	 */
-	NoLocalSende(NativeAccess.CANUSB_FLAG_NO_LOCAL_SEND,
+	NoLocalSend(NativeAccess.CANUSB_FLAG_NO_LOCAL_SEND,
 			"CANUSB_FLAG_NO_LOCAL_SEND");
 
 	private int nativeFlag;

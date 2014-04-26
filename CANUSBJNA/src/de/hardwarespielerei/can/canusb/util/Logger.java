@@ -24,7 +24,6 @@
 
 package de.hardwarespielerei.can.canusb.util;
 
-import java.io.PrintStream;
 import java.util.Date;
 import java.util.NoSuchElementException;
 
@@ -72,283 +71,22 @@ public class Logger
 
 	private static class LogReceiveCallback implements ReceiveCallback
 	{
-		private Logger logger;
-
-		private LogReceiveCallback(Logger logger)
-		{
-			// initialize member variables
-			this.logger = logger;
-		}
-
 		@Override
 		public void callback(CANMessage msg)
 		{
-			this.logger.logMessage(msg);
+			System.out.println("[" + new Date(System.currentTimeMillis())
+					+ "][MSGRECEIVE]");
+			System.out.println(msg);
 		}
-	}
-
-	private class StatusLogger implements Runnable
-	{
-		private Logger logger;
-		private boolean stopThread = false;
-
-		private StatusLogger(Logger logger)
-		{
-			// initialize member variables
-			this.logger = logger;
-		}
-
-		private void stop()
-		{
-			// raise stop flag
-			this.stopThread = true;
-		}
-
-		@Override
-		public void run()
-		{
-			long lastStatusMillis = 0;
-			while (!this.stopThread)
-			{
-				// log status every second
-				long now = System.currentTimeMillis();
-				if (now - lastStatusMillis >= 10000)
-				{
-					try
-					{
-						Status status = this.logger.getStatus();
-						this.logger.logStatus(status);
-					} catch (CANUSBException e)
-					{
-						this.logger.out.println("["
-								+ new Date(System.currentTimeMillis())
-								+ "][ERROR][" + e.getMessage() + "]");
-						e.printStackTrace(this.logger.out);
-					}
-					lastStatusMillis = now;
-				}
-
-				if (this.logger.mode.equals(Mode.LOOP))
-				{
-					// log all messages received
-					do
-					{
-						try
-						{
-							CANMessage msg = this.logger.channel.read();
-							this.logger.out.println("["
-									+ new Date(System.currentTimeMillis())
-									+ "][MSGRECEIVE]");
-							this.logger.out.println(msg);
-						} catch (NoMessageException e)
-						{
-							// no more messages waiting, stop loop and go to
-							// sleep...
-							break;
-						} catch (CANUSBException e)
-						{
-							this.logger.out.println("["
-									+ new Date(System.currentTimeMillis())
-									+ "][ERROR][" + e.getMessage() + "]");
-							e.printStackTrace();
-						}
-					} while (true);
-				}
-
-				// sleep
-				try
-				{
-					Thread.sleep(10);
-				} catch (InterruptedException e)
-				{
-					// do nothing
-				}
-			}
-		}
-	}
-
-	private Mode mode;
-	private Bitrate bitrate;
-	private ReceiveCallback callback;
-	private Adapter adapter;
-	protected Channel channel;
-	protected PrintStream out;
-	private StatusLogger statusLogger;
-	private Thread statusLoggerThread;
-
-	private Logger(Mode mode, Adapter adapterToUse, Bitrate bitrate,
-			ReceiveCallback callback, PrintStream out) throws CANUSBException
-	{
-		// initialize member variables
-		this.mode = mode;
-		this.bitrate = bitrate;
-		this.callback = callback;
-		this.adapter = adapterToUse;
-		this.out = out;
-
-		// open channel
-		Flag[] flags = { Flag.Timestamp };
-		this.channel = this.adapter.openChannel(this.bitrate,
-				AcceptanceCode.AcceptAll, AcceptanceMask.AcceptAll, flags);
-		try
-		{
-			// log version info
-			this.out.println("[" + new Date(System.currentTimeMillis())
-					+ "][VERSIONINFO][" + channel.getVersionInfo() + "]");
-
-			if (this.mode.equals(Mode.CALLBACK))
-			{
-				if (null == this.callback)
-				{
-					this.callback = new LogReceiveCallback(this);
-				}
-				// set log receive callback
-				channel.setReceiveCallBack(this.callback);
-			}
-
-			// start status logger
-			this.statusLogger = new StatusLogger(this);
-			this.statusLoggerThread = new Thread(this.statusLogger,
-					"StatusLogger");
-			this.statusLoggerThread.start();
-		} catch (Exception e)
-		{
-			// cleanup
-			synchronized (this.channel)
-			{
-				this.channel.close();
-			}
-			throw new RuntimeException(e);
-		}
-	}
-
-	/**
-	 * Constructs a logger sniffing the CAN communication on the given adpater
-	 * in loop or call back mode and logging to the given output stream.
-	 * 
-	 * @param mode
-	 *            determines whether the logger reads CAN messages in a loop or
-	 *            via call back.
-	 * @param adapterToUse
-	 *            references the adapter to use.
-	 * @param bitrate
-	 *            references the bit rate used on the CAN bus.
-	 * @param out
-	 *            references the output stream for printing the log content.
-	 * @throws CANUSBException
-	 *             on errors while accessing CANUSB.
-	 */
-	public Logger(Mode mode, Adapter adapterToUse, Bitrate bitrate,
-			PrintStream out) throws CANUSBException
-	{
-		this(mode, adapterToUse, bitrate, null, out);
-	}
-
-	/**
-	 * Constructs a logger sniffing the CAN communication on the given adpater
-	 * in call back mode and logging via the given receive callback.
-	 * 
-	 * @param adapterToUse
-	 *            references the adapter to use.
-	 * @param bitrate
-	 *            references the bit rate used on the CAN bus.
-	 * @param callback
-	 *            references the call back.
-	 * @param out
-	 *            references the output stream for printing the log content.
-	 * @throws CANUSBException
-	 *             on errors while accessing CANUSB.
-	 */
-	public Logger(Adapter adapterToUse, Bitrate bitrate,
-			ReceiveCallback callback, PrintStream out) throws CANUSBException
-	{
-		this(Mode.CALLBACK, adapterToUse, bitrate, callback, out);
-	}
-
-	/**
-	 * Closes this logger.
-	 * 
-	 * @throws CANUSBException
-	 *             on errors while accessing CANUSB.
-	 */
-	public void close() throws CANUSBException
-	{
-		// stop status logger
-		this.statusLogger.stop();
-		this.statusLoggerThread.interrupt();
-
-		// stop receive callback
-		synchronized (this.channel)
-		{
-			this.channel.setReceiveCallBack(null);
-		}
-
-		// wait for termination of status logger
-		while (this.statusLoggerThread.isAlive())
-		{
-			try
-			{
-				Thread.sleep(1);
-			} catch (InterruptedException e)
-			{
-				// do nothing
-			}
-		}
-
-		// close channel
-		synchronized (this.channel)
-		{
-			this.channel.close();
-		}
-	}
-
-	/**
-	 * Gets the status of the channel used by this logger.
-	 * 
-	 * @return the status.
-	 * @throws CANUSBException
-	 *             on errors while accessing CANUSB.
-	 */
-	public Status getStatus() throws CANUSBException
-	{
-		synchronized (this.channel)
-		{
-			return this.channel.getStatus();
-		}
-	}
-
-	/**
-	 * Callback method for status updates to be logged.
-	 * 
-	 * @param status
-	 *            references the CANBUS status.
-	 */
-	public void logStatus(Status status)
-	{
-		this.out.println("[" + new Date(System.currentTimeMillis())
-				+ "][STATUS][" + status + "]");
-	}
-
-	/**
-	 * Callback method for received messages to be logged.
-	 * 
-	 * @param msg
-	 *            references the CAN message.
-	 */
-	public void logMessage(CANMessage msg)
-	{
-		this.out.println("[" + new Date(System.currentTimeMillis())
-				+ "][MSGRECEIVE]");
-		this.out.println(msg);
 	}
 
 	private static class ShutdownHook extends Thread
 	{
-		private Logger logger;
+		private Channel channel;
 
-		protected ShutdownHook(Logger logger)
+		protected ShutdownHook(Channel channel)
 		{
-			this.logger = logger;
+			this.channel = channel;
 		}
 
 		@Override
@@ -356,7 +94,7 @@ public class Logger
 		{
 			try
 			{
-				logger.close();
+				channel.close();
 			} catch (CANUSBException e)
 			{
 				System.err.println("ERROR: Can't close CANUSB properly!");
@@ -375,10 +113,14 @@ public class Logger
 	public static void main(String[] args) throws CANUSBException
 	{
 		System.out.println("###############################");
-		System.out.println("# CANUSB Logger V" + Version.VERSION + "     #");
+		System.out.println("# CANUSB Logger               #");
 		System.out.println("# (C) 2014 by Gabriel Schmidt #");
 		System.out.println("#  @see hardwarespielerei.de  #");
 		System.out.println("###############################");
+		System.out.println();
+		System.out.println("CANUSB     V" + Version.VERSION);
+		System.out.println("JNA        V" + com.sun.jna.Native.VERSION);
+		System.out.println("JNA NATIVE V" + com.sun.jna.Native.VERSION_NATIVE);
 		System.out.println();
 		if (Platform.isWindows())
 		{
@@ -489,36 +231,103 @@ public class Logger
 				}
 			}
 
-			// start logging...
 			System.out.println("Start sniffing on CANUSB # "
 					+ adapterToUse.getSerialNumber() + " with " + bitrate
 					+ " kbps in " + mode.toString().toLowerCase() + " mode...");
-			System.out.println("Press [Control+C] to stop logging...");
-			Logger logger = new Logger(mode, adapterToUse, bitrate, System.out);
-			ShutdownHook shutdownHook = new ShutdownHook(logger);
-			Runtime.getRuntime().addShutdownHook(shutdownHook);
+			// open channel
+			Flag[] flags = { Flag.Timestamp };
+			Channel channel = adapterToUse.openChannel(bitrate,
+					AcceptanceCode.AcceptAll, AcceptanceMask.AcceptAll, flags);
 			try
 			{
-				boolean goon = true;
-				do
+				System.out.println("Press [Control+C] to stop logging...");
+				ShutdownHook shutdownHook = new ShutdownHook(channel);
+				Runtime.getRuntime().addShutdownHook(shutdownHook);
+
+				// start logging...
+				if (mode.equals(Mode.CALLBACK))
 				{
-					// sleep...
-					try
+					// set log receive callback
+					channel.setReceiveCallBack(new LogReceiveCallback());
+
+				}
+				try
+				{
+					boolean goon = true;
+					long lastStatusMillis = 0;
+					do
 					{
-						Thread.sleep(100);
-					} catch (InterruptedException e)
-					{
-						// do nothing
-					}
-				} while (goon);
+						// log status every second
+						long now = System.currentTimeMillis();
+						if (now - lastStatusMillis >= 10000)
+						{
+							try
+							{
+								Status status = channel.getStatus();
+								System.out.println("["
+										+ new Date(System.currentTimeMillis())
+										+ "][STATUS][" + status + "]");
+							} catch (CANUSBException e)
+							{
+								System.err.println("["
+										+ new Date(System.currentTimeMillis())
+										+ "][ERROR][" + e.getMessage() + "]");
+								e.printStackTrace(System.err);
+							}
+							lastStatusMillis = now;
+						}
+
+						if (mode.equals(Mode.LOOP))
+						{
+							try
+							{
+								// try to read a message
+								CANMessage msg = channel.read();
+								System.out.println("["
+										+ new Date(System.currentTimeMillis())
+										+ "][MSGRECEIVE]");
+								System.out.println(msg);
+							} catch (NoMessageException e)
+							{
+								// no more messages waiting, stop loop and
+								// go to sleep...
+								try
+								{
+									Thread.sleep(100);
+								} catch (InterruptedException ie)
+								{
+									// do nothing
+								}
+							} catch (CANUSBException e)
+							{
+								System.err.println("["
+										+ new Date(System.currentTimeMillis())
+										+ "][ERROR][" + e.getMessage() + "]");
+								e.printStackTrace(System.err);
+							}
+						} else
+						{
+							// sleep for a while...
+							try
+							{
+								Thread.sleep(100);
+							} catch (InterruptedException ie)
+							{
+								// do nothing
+							}
+						}
+					} while (goon);
+				} finally
+				{
+					// exiting do-while-loop unexpectedly...
+					System.err
+							.println("WARNING: CANUSB log ends unexpectedly!");
+					// remove shutdown hook...
+					Runtime.getRuntime().removeShutdownHook(shutdownHook);
+				}
 			} finally
 			{
-				// exiting do-while-loop unexpectedly...
-				System.err.println("WARNING: CANUSB log ends unexpectedly!");
-				// remove shutdown hook...
-				Runtime.getRuntime().removeShutdownHook(shutdownHook);
-				// do what has to be done...
-				logger.close();
+				channel.close();
 			}
 		} else
 		{

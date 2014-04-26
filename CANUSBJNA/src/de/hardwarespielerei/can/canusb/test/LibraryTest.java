@@ -55,11 +55,15 @@ public class LibraryTest
 	 */
 	public static void main(String[] args) throws CANUSBException
 	{
-		System.out.println("#################################");
-		System.out.println("# CANUSB Library Test V" + Version.VERSION + " #");
-		System.out.println("# (C) 2014 by Gabriel Schmidt   #");
-		System.out.println("#  @see hardwarespielerei.de    #");
-		System.out.println("#################################");
+		System.out.println("###############################");
+		System.out.println("# CANUSB Library Test         #");
+		System.out.println("# (C) 2014 by Gabriel Schmidt #");
+		System.out.println("#  @see hardwarespielerei.de  #");
+		System.out.println("###############################");
+		System.out.println();
+		System.out.println("CANUSB     V" + Version.VERSION);
+		System.out.println("JNA        V" + com.sun.jna.Native.VERSION);
+		System.out.println("JNA NATIVE V" + com.sun.jna.Native.VERSION_NATIVE);
 		System.out.println();
 		if (Platform.isWindows())
 		{

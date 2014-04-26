@@ -107,9 +107,7 @@ public class Channel
 	 */
 	public Status getStatus() throws CANUSBException
 	{
-		// TODO: remove workaround!
-		int status = 0;
-		// int status = NativeAccess.INSTANCE.canusb_Status(this.handle);
+		int status = NativeAccess.INSTANCE.canusb_Status(this.handle);
 		if (status < 0)
 		{
 			CANUSBException.throwOnErrorCode(status,
