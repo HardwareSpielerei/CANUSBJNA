@@ -39,12 +39,12 @@ public interface Version
 	 * Minor version number. Odd numbers indicate experimental releases, even
 	 * numbers indicate production releases.
 	 */
-	public static final int MINOR = 1;
+	public static final int MINOR = 2;
 
 	/**
 	 * Build number. It is increased for every release.
 	 */
-	public static final int BUILD = 1001;
+	public static final int BUILD = 1002;
 
 	/**
 	 * Version string.

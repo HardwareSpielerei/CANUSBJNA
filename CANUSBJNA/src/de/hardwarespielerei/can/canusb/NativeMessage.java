@@ -66,7 +66,7 @@ public class NativeMessage implements CANMessage
 		{
 			throw new IllegalArgumentException("Reserver has more then 6 bits!");
 		}
-		if (data.length > 8)
+		if (null != data && data.length > 8)
 		{
 			throw new IllegalArgumentException(
 					"Data is more than 8 bytes long!");

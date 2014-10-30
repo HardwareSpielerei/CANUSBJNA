@@ -38,6 +38,7 @@ import de.hardwarespielerei.can.canusb.CANMessage;
 import de.hardwarespielerei.can.canusb.CANUSBException;
 import de.hardwarespielerei.can.canusb.Channel;
 import de.hardwarespielerei.can.canusb.Flag;
+import de.hardwarespielerei.can.canusb.Library;
 import de.hardwarespielerei.can.canusb.NoMessageException;
 import de.hardwarespielerei.can.canusb.ReceiveCallback;
 import de.hardwarespielerei.can.canusb.Status;
@@ -124,173 +125,203 @@ public class Logger
 		System.out.println();
 		if (Platform.isWindows())
 		{
-			// set defaults
-			Mode mode = Mode.CALLBACK;
-			Bitrate bitrate = Bitrate.Bitrate250kbps;
-			String serialNumber = null;
-
-			// parse command line arguments
-			int argPos = 0;
-			while (argPos < args.length)
-			{
-				String arg = args[argPos++];
-				try
-				{
-					switch (arg)
-					{
-						case "-bitrate":
-							String bitrateArg = args[argPos++];
-							switch (bitrateArg)
-							{
-								case "10":
-								case "10kbps":
-									bitrate = Bitrate.Bitrate10kbps;
-									break;
-								case "20":
-								case "20kbps":
-									bitrate = Bitrate.Bitrate20kbps;
-									break;
-								case "50":
-								case "50kbps":
-									bitrate = Bitrate.Bitrate50kbps;
-									break;
-								case "100":
-								case "100kbps":
-									bitrate = Bitrate.Bitrate100kbps;
-									break;
-								case "250":
-								case "250kbps":
-									bitrate = Bitrate.Bitrate250kbps;
-									break;
-								case "500":
-								case "500kbps":
-									bitrate = Bitrate.Bitrate500kbps;
-									break;
-								case "800":
-								case "800kbps":
-									bitrate = Bitrate.Bitrate800kbps;
-									break;
-								case "1000":
-								case "1Mbps":
-									bitrate = Bitrate.Bitrate1Mbps;
-									break;
-							}
-							break;
-						case "-mode":
-							String modeArg = args[argPos++];
-							try
-							{
-								mode = Mode.valueOf(modeArg.toUpperCase());
-							} catch (IllegalArgumentException e)
-							{
-								System.err.println("WARNING: \"" + modeArg
-										+ "\" is not a valid mode!");
-							}
-							break;
-						case "-sn":
-							serialNumber = args[argPos++];
-							break;
-						default:
-							System.err.println("WARNING: Unkown argument \""
-									+ arg + "\"!");
-					}
-				} catch (ArrayIndexOutOfBoundsException e)
-				{
-					System.err
-							.println("WARNING: Missing parameter for option \""
-									+ arg + "\"!");
-				}
-			}
-
-			// search for adapter to use...
-			Adapter adapterToUse = null;
-			if (null == serialNumber)
-			{
-				System.out
-						.println("No serial number specified - searching for CANUSB adapter with "
-								+ bitrate + " kbps...");
-				try
-				{
-					adapterToUse = new AdapterIterator(bitrate).next();
-				} catch (NoSuchElementException e)
-				{
-					throw new NullPointerException("No CANUSB adapter found!");
-				}
-			} else
-			{
-				System.out.println("Searching for CANUSB # " + serialNumber
-						+ " with " + bitrate + " kbps...");
-				try
-				{
-					adapterToUse = new AdapterIterator(bitrate)
-							.next(serialNumber);
-				} catch (NoSuchElementException e)
-				{
-					throw new NullPointerException("No CANUSB # "
-							+ serialNumber + " found!");
-				}
-			}
-
-			System.out.println("Start sniffing on CANUSB # "
-					+ adapterToUse.getSerialNumber() + " with " + bitrate
-					+ " kbps in " + mode.toString().toLowerCase() + " mode...");
-			// open channel
-			Flag[] flags = { Flag.Timestamp };
-			Channel channel = adapterToUse.openChannel(bitrate,
-					AcceptanceCode.AcceptAll, AcceptanceMask.AcceptAll, flags);
+			Library.load();
 			try
 			{
-				System.out.println("Press [Control+C] to stop logging...");
-				ShutdownHook shutdownHook = new ShutdownHook(channel);
-				Runtime.getRuntime().addShutdownHook(shutdownHook);
+				// set defaults
+				Mode mode = Mode.CALLBACK;
+				Bitrate bitrate = Bitrate.Bitrate250kbps;
+				String serialNumber = null;
 
-				// start logging...
-				if (mode.equals(Mode.CALLBACK))
+				// parse command line arguments
+				int argPos = 0;
+				while (argPos < args.length)
 				{
-					// set log receive callback
-					channel.setReceiveCallBack(new LogReceiveCallback());
-
+					String arg = args[argPos++];
+					try
+					{
+						switch (arg)
+						{
+							case "-bitrate":
+								String bitrateArg = args[argPos++];
+								switch (bitrateArg)
+								{
+									case "10":
+									case "10kbps":
+										bitrate = Bitrate.Bitrate10kbps;
+										break;
+									case "20":
+									case "20kbps":
+										bitrate = Bitrate.Bitrate20kbps;
+										break;
+									case "50":
+									case "50kbps":
+										bitrate = Bitrate.Bitrate50kbps;
+										break;
+									case "100":
+									case "100kbps":
+										bitrate = Bitrate.Bitrate100kbps;
+										break;
+									case "250":
+									case "250kbps":
+										bitrate = Bitrate.Bitrate250kbps;
+										break;
+									case "500":
+									case "500kbps":
+										bitrate = Bitrate.Bitrate500kbps;
+										break;
+									case "800":
+									case "800kbps":
+										bitrate = Bitrate.Bitrate800kbps;
+										break;
+									case "1000":
+									case "1Mbps":
+										bitrate = Bitrate.Bitrate1Mbps;
+										break;
+								}
+								break;
+							case "-mode":
+								String modeArg = args[argPos++];
+								try
+								{
+									mode = Mode.valueOf(modeArg.toUpperCase());
+								} catch (IllegalArgumentException e)
+								{
+									System.err.println("WARNING: \"" + modeArg
+											+ "\" is not a valid mode!");
+								}
+								break;
+							case "-sn":
+								serialNumber = args[argPos++];
+								break;
+							default:
+								System.err
+										.println("WARNING: Unkown argument \""
+												+ arg + "\"!");
+						}
+					} catch (ArrayIndexOutOfBoundsException e)
+					{
+						System.err
+								.println("WARNING: Missing parameter for option \""
+										+ arg + "\"!");
+					}
 				}
+
+				// search for adapter to use...
+				Adapter adapterToUse = null;
+				if (null == serialNumber)
+				{
+					System.out
+							.println("No serial number specified - searching for CANUSB adapter with "
+									+ bitrate + " kbps...");
+					try
+					{
+						adapterToUse = new AdapterIterator(bitrate).next();
+					} catch (NoSuchElementException e)
+					{
+						throw new NullPointerException(
+								"No CANUSB adapter found!");
+					}
+				} else
+				{
+					System.out.println("Searching for CANUSB # " + serialNumber
+							+ " with " + bitrate + " kbps...");
+					try
+					{
+						adapterToUse = new AdapterIterator(bitrate)
+								.next(serialNumber);
+					} catch (NoSuchElementException e)
+					{
+						throw new NullPointerException("No CANUSB # "
+								+ serialNumber + " found!");
+					}
+				}
+
+				System.out.println("Start sniffing on CANUSB # "
+						+ adapterToUse.getSerialNumber() + " with " + bitrate
+						+ " kbps in " + mode.toString().toLowerCase()
+						+ " mode...");
+				// open channel
+				Flag[] flags = { Flag.Timestamp };
+				Channel channel = adapterToUse.openChannel(bitrate,
+						AcceptanceCode.AcceptAll, AcceptanceMask.AcceptAll,
+						flags);
 				try
 				{
-					boolean goon = true;
-					long lastStatusMillis = 0;
-					do
-					{
-						// log status every second
-						long now = System.currentTimeMillis();
-						if (now - lastStatusMillis >= 10000)
-						{
-							try
-							{
-								Status status = channel.getStatus();
-								System.out.println("["
-										+ new Date(System.currentTimeMillis())
-										+ "][STATUS][" + status + "]");
-							} catch (CANUSBException e)
-							{
-								System.err.println("["
-										+ new Date(System.currentTimeMillis())
-										+ "][ERROR][" + e.getMessage() + "]");
-								e.printStackTrace(System.err);
-							}
-							lastStatusMillis = now;
-						}
+					System.out.println("Press [Control+C] to stop logging...");
+					ShutdownHook shutdownHook = new ShutdownHook(channel);
+					Runtime.getRuntime().addShutdownHook(shutdownHook);
 
-						if (mode.equals(Mode.LOOP))
+					// start logging...
+					if (mode.equals(Mode.CALLBACK))
+					{
+						// set log receive callback
+						channel.setReceiveCallBack(new LogReceiveCallback());
+
+					}
+					try
+					{
+						boolean goon = true;
+						long lastStatusMillis = 0;
+						do
 						{
-							try
+							// log status every second
+							long now = System.currentTimeMillis();
+							if (now - lastStatusMillis >= 10000)
 							{
-								// try to read a message
-								CANMessage msg = channel.read();
-								System.out.println("["
-										+ new Date(System.currentTimeMillis())
-										+ "][MSGRECEIVE]");
-								System.out.println(msg);
-							} catch (NoMessageException e)
+								try
+								{
+									Status status = channel.getStatus();
+									System.out.println("["
+											+ new Date(System
+													.currentTimeMillis())
+											+ "][STATUS][" + status + "]");
+								} catch (CANUSBException e)
+								{
+									System.err.println("["
+											+ new Date(System
+													.currentTimeMillis())
+											+ "][ERROR][" + e.getMessage()
+											+ "]");
+									e.printStackTrace(System.err);
+								}
+								lastStatusMillis = now;
+							}
+
+							if (mode.equals(Mode.LOOP))
 							{
-								// no more messages waiting, stop loop and
-								// go to sleep...
+								try
+								{
+									// try to read a message
+									CANMessage msg = channel.read();
+									System.out.println("["
+											+ new Date(System
+													.currentTimeMillis())
+											+ "][MSGRECEIVE]");
+									System.out.println(msg);
+								} catch (NoMessageException e)
+								{
+									// no more messages waiting, stop loop and
+									// go to sleep...
+									try
+									{
+										Thread.sleep(100);
+									} catch (InterruptedException ie)
+									{
+										// do nothing
+									}
+								} catch (CANUSBException e)
+								{
+									System.err.println("["
+											+ new Date(System
+													.currentTimeMillis())
+											+ "][ERROR][" + e.getMessage()
+											+ "]");
+									e.printStackTrace(System.err);
+								}
+							} else
+							{
+								// sleep for a while...
 								try
 								{
 									Thread.sleep(100);
@@ -298,36 +329,23 @@ public class Logger
 								{
 									// do nothing
 								}
-							} catch (CANUSBException e)
-							{
-								System.err.println("["
-										+ new Date(System.currentTimeMillis())
-										+ "][ERROR][" + e.getMessage() + "]");
-								e.printStackTrace(System.err);
 							}
-						} else
-						{
-							// sleep for a while...
-							try
-							{
-								Thread.sleep(100);
-							} catch (InterruptedException ie)
-							{
-								// do nothing
-							}
-						}
-					} while (goon);
+						} while (goon);
+					} finally
+					{
+						// exiting do-while-loop unexpectedly...
+						System.err
+								.println("WARNING: CANUSB log ends unexpectedly!");
+						// remove shutdown hook...
+						Runtime.getRuntime().removeShutdownHook(shutdownHook);
+					}
 				} finally
 				{
-					// exiting do-while-loop unexpectedly...
-					System.err
-							.println("WARNING: CANUSB log ends unexpectedly!");
-					// remove shutdown hook...
-					Runtime.getRuntime().removeShutdownHook(shutdownHook);
+					channel.close();
 				}
 			} finally
 			{
-				channel.close();
+				Library.unload();
 			}
 		} else
 		{

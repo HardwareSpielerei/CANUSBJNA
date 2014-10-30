@@ -114,25 +114,24 @@ public class Status
 	@Override
 	public String toString()
 	{
-		return "0x"
-				+ Integer.toHexString(this.status)
-				+ (this.isOK() ? ", OK" : "")
-				+ (this.isReceiveFifoFull() ? ", CANSTATUS_RECEIVE_FIFO_FULL"
+		return (this.isOK() ? "OK, " : "")
+				+ (this.isReceiveFifoFull() ? "CANSTATUS_RECEIVE_FIFO_FULL, "
 						: "")
-				+ (this.isTransmitFifoFull() ? ", CANSTATUS_TRANSMIT_FIFO_FULL"
+				+ (this.isTransmitFifoFull() ? "CANSTATUS_TRANSMIT_FIFO_FULL, "
 						: "")
-				+ (this.isErrorWarning() ? ", CANSTATUS_ERROR_WARNING" : "")
-				+ (this.isDataOverrun() ? ", CANSTATUS_DATA_OVERRUN" : "")
-				+ (this.isErrorPassive() ? ", CANSTATUS_ERROR_PASSIVE" : "")
-				+ (this.isArbitrationLost() ? ", CANSTATUS_ARBITRATION_LOST"
+				+ (this.isErrorWarning() ? "CANSTATUS_ERROR_WARNING, " : "")
+				+ (this.isDataOverrun() ? "CANSTATUS_DATA_OVERRUN, " : "")
+				+ (this.isErrorPassive() ? "CANSTATUS_ERROR_PASSIVE, " : "")
+				+ (this.isArbitrationLost() ? "CANSTATUS_ARBITRATION_LOST, "
 						: "")
-				+ (this.isBusError() ? ", CANSTATUS_BUS_ERROR" : "")
+				+ (this.isBusError() ? "CANSTATUS_BUS_ERROR, " : "")
 				+ (0 == (this.status & ~(NativeAccess.CANSTATUS_RECEIVE_FIFO_FULL
 						| NativeAccess.CANSTATUS_TRANSMIT_FIFO_FULL
 						| NativeAccess.CANSTATUS_ERROR_WARNING
 						| NativeAccess.CANSTATUS_DATA_OVERRUN
 						| NativeAccess.CANSTATUS_ERROR_PASSIVE
 						| NativeAccess.CANSTATUS_ARBITRATION_LOST | NativeAccess.CANSTATUS_BUS_ERROR)) ? ""
-						: ", unknown error(s)");
+						: "unknown error(s), ") + "0x"
+				+ Integer.toHexString(this.status);
 	}
 }

@@ -27,7 +27,6 @@ package de.hardwarespielerei.can.canusb;
 import com.sun.jna.Native;
 import com.sun.jna.NativeLong;
 
-import de.hardwarespielerei.can.canusb.jna.NativeAccess;
 import de.hardwarespielerei.can.canusb.jna.NativeAccess.CANMsgByReference;
 import de.hardwarespielerei.can.canusb.jna.NativeAccess.NativeReceiveCallback;
 
@@ -38,6 +37,8 @@ import de.hardwarespielerei.can.canusb.jna.NativeAccess.NativeReceiveCallback;
  */
 public class Channel
 {
+	private static final byte[] DUMMY_BYTE = new byte[1];
+
 	private class ReceiveCallbackTranslator implements NativeReceiveCallback
 	{
 		ReceiveCallback callback;
@@ -69,8 +70,8 @@ public class Channel
 		{
 			nativeFlags |= flag.getNativeFlag();
 		}
-		this.handle = NativeAccess.INSTANCE.canusb_Open(adapterID,
-				bitrate.toString(), acceptanceCode.getAcceptanceCode(),
+		this.handle = Library.call().canusb_Open(adapterID, bitrate.toString(),
+				acceptanceCode.getAcceptanceCode(),
 				acceptanceMask.getAcceptanceMask(), nativeFlags);
 		if (this.handle.longValue() <= 0)
 		{
@@ -88,7 +89,7 @@ public class Channel
 	public void close() throws CANUSBException
 	{
 		CANUSBException.throwOnErrorCode(
-				NativeAccess.INSTANCE.canusb_Close(this.handle),
+				Library.call().canusb_Close(this.handle),
 				"Error while closing channel to adapter " + this.adapterID
 						+ "!");
 	}
@@ -107,7 +108,7 @@ public class Channel
 	 */
 	public Status getStatus() throws CANUSBException
 	{
-		int status = NativeAccess.INSTANCE.canusb_Status(this.handle);
+		int status = Library.call().canusb_Status(this.handle);
 		if (status < 0)
 		{
 			CANUSBException.throwOnErrorCode(status,
@@ -128,7 +129,7 @@ public class Channel
 		byte[] buffer = Native
 				.toByteArray("VHhFf - Nxxxx - n.n.n - CCCCCCCCCC");
 		CANUSBException.throwOnErrorCode(
-				NativeAccess.INSTANCE.canusb_VersionInfo(this.handle, buffer),
+				Library.call().canusb_VersionInfo(this.handle, buffer),
 				"Can't get version info from adapter " + this.adapterID + "!");
 		return Native.toString(buffer);
 	}
@@ -147,7 +148,7 @@ public class Channel
 	{
 		CANMessage msg = null;
 		CANMsgByReference nativeMsg = new CANMsgByReference();
-		int status = NativeAccess.INSTANCE.canusb_Read(this.handle, nativeMsg);
+		int status = Library.call().canusb_Read(this.handle, nativeMsg);
 		if (status > 0)
 		{
 			msg = new NativeMessage(nativeMsg);
@@ -178,7 +179,7 @@ public class Channel
 		{
 			nextNativeCallBack = new ReceiveCallbackTranslator(callBack);
 		}
-		CANUSBException.throwOnErrorCode(NativeAccess.INSTANCE
+		CANUSBException.throwOnErrorCode(Library.call()
 				.canusb_setReceiveCallBack(this.handle, nextNativeCallBack),
 				"Can't set receive call back to " + callBack + " on adapter "
 						+ this.adapterID + "!");
@@ -204,10 +205,12 @@ public class Channel
 		{
 			nativeMsg = new NativeMessage(msg.getId(), msg.getTimestamp(),
 					msg.isExtendedID(), msg.isRemoteFrame(), msg.getReserver(),
-					msg.getLength(), msg.getData());
+					msg.getLength(),
+					// Workaround: CANUSB doesn't like arrays of length zero!
+					(0 == msg.getLength() ? DUMMY_BYTE : msg.getData()));
 		}
 		CANUSBException.throwOnErrorCode(
-				NativeAccess.INSTANCE.canusb_Write(this.handle,
+				Library.call().canusb_Write(this.handle,
 						nativeMsg.getNativeMessage()),
 				"Can't write to adapter " + this.adapterID + "!");
 	}

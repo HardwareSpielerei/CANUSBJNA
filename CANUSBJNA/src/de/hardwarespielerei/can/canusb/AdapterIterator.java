@@ -59,7 +59,7 @@ public class AdapterIterator implements Iterator<Adapter>
 	{
 		this.bitrate = bitrate;
 		byte[] buffer = new byte[32];
-		this.numberOfCANUSB = NativeAccess.INSTANCE.canusb_getFirstAdapter(
+		this.numberOfCANUSB = Library.call().canusb_getFirstAdapter(
 				buffer, buffer.length);
 		this.indexOfCANUSB = 0;
 		this.adapterID = Native.toString(buffer);
@@ -84,7 +84,7 @@ public class AdapterIterator implements Iterator<Adapter>
 		try
 		{
 			// TODO adapt acceptance code, mask and flags
-			NativeLong handle = NativeAccess.INSTANCE.canusb_Open(
+			NativeLong handle = Library.call().canusb_Open(
 					this.adapterID, this.bitrate.toString(),
 					NativeAccess.CANUSB_ACCEPTANCE_CODE_ALL,
 					NativeAccess.CANUSB_ACCEPTANCE_MASK_ALL,
@@ -99,13 +99,13 @@ public class AdapterIterator implements Iterator<Adapter>
 				byte[] info = Native
 						.toByteArray("VHhFf - Nxxxx - n.n.n - CCCCCCCCCC");
 				CANUSBException.throwOnErrorCode(
-						NativeAccess.INSTANCE.canusb_VersionInfo(handle, info),
+						Library.call().canusb_VersionInfo(handle, info),
 						"Error while reading VersionInfo from CANUSB!");
 				serialNumber = Native.toString(info).substring(9, 13);
 			} finally
 			{
 				CANUSBException.throwOnErrorCode(
-						NativeAccess.INSTANCE.canusb_Close(handle),
+						Library.call().canusb_Close(handle),
 						"Error while closing CANUSB channel!");
 			}
 			result = new Adapter(serialNumber, this.adapterID);
@@ -114,7 +114,7 @@ public class AdapterIterator implements Iterator<Adapter>
 			if (this.hasNext())
 			{
 				byte[] buffer = new byte[32];
-				CANUSBException.throwOnErrorCode(NativeAccess.INSTANCE
+				CANUSBException.throwOnErrorCode(Library.call()
 						.canusb_getNextAdapter(buffer, buffer.length),
 						"Error while listing CANUSB adapters!");
 				this.adapterID = Native.toString(buffer);

@@ -34,6 +34,7 @@ import de.hardwarespielerei.can.canusb.Bitrate;
 import de.hardwarespielerei.can.canusb.CANUSBException;
 import de.hardwarespielerei.can.canusb.Channel;
 import de.hardwarespielerei.can.canusb.Flag;
+import de.hardwarespielerei.can.canusb.Library;
 import de.hardwarespielerei.can.canusb.Status;
 import de.hardwarespielerei.can.canusb.Version;
 
@@ -67,41 +68,50 @@ public class LibraryTest
 		System.out.println();
 		if (Platform.isWindows())
 		{
-			System.out.println("List of known adapters:");
-
-			// iterate over the CANBUS adapter...
-			AdapterIterator adapters = new AdapterIterator(Bitrate.Bitrate1Mbps);
-			while (adapters.hasNext())
+			Library.load();
+			try
 			{
-				Adapter adapter = adapters.next();
+				System.out.println("List of known adapters:");
 
-				// open channel to CANBUS adapter to get its status and version
-				// info...
-				Status status;
-				String versionInfo;
-				Flag[] flags = { Flag.Timestamp };
-				Channel channel = adapter.openChannel(Bitrate.Bitrate1Mbps,
-						AcceptanceCode.AcceptAll, AcceptanceMask.AcceptAll,
-						flags);
-				try
+				// iterate over the CANBUS adapter...
+				AdapterIterator adapters = new AdapterIterator(
+						Bitrate.Bitrate1Mbps);
+				while (adapters.hasNext())
 				{
-					// get the status...
-					status = channel.getStatus();
+					Adapter adapter = adapters.next();
 
-					// get the version info...
-					versionInfo = channel.getVersionInfo();
+					// open channel to CANBUS adapter to get its status and
+					// version
+					// info...
+					Status status;
+					String versionInfo;
+					Flag[] flags = { Flag.Timestamp };
+					Channel channel = adapter.openChannel(Bitrate.Bitrate1Mbps,
+							AcceptanceCode.AcceptAll, AcceptanceMask.AcceptAll,
+							flags);
+					try
+					{
+						// get the status...
+						status = channel.getStatus();
 
-					// print list entry...
-					System.out.println("CANUSB # " + adapter.getSerialNumber()
-							+ "\tVersionInfo=" + versionInfo + "\tStatus="
-							+ status);
-				} finally
-				{
-					// close channel to CANBUS adapter
-					channel.close();
+						// get the version info...
+						versionInfo = channel.getVersionInfo();
+
+						// print list entry...
+						System.out.println("CANUSB # "
+								+ adapter.getSerialNumber() + "\tVersionInfo="
+								+ versionInfo + "\tStatus=" + status);
+					} finally
+					{
+						// close channel to CANBUS adapter
+						channel.close();
+					}
 				}
+				System.out.println("End of list.");
+			} finally
+			{
+				Library.unload();
 			}
-			System.out.println("End of list.");
 		} else
 		{
 			System.out.println("CANUSB is not supported on this platform!");

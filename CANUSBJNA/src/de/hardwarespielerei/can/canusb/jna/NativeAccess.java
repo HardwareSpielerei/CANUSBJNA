@@ -29,9 +29,7 @@ import java.util.List;
 
 import com.sun.jna.Callback;
 import com.sun.jna.Library;
-import com.sun.jna.Native;
 import com.sun.jna.NativeLong;
-import com.sun.jna.Platform;
 import com.sun.jna.Structure;
 
 /**
@@ -41,13 +39,6 @@ import com.sun.jna.Structure;
  */
 public interface NativeAccess extends Library
 {
-	/**
-	 * JNA-specific declaration
-	 */
-	NativeAccess INSTANCE = (NativeAccess) Native.loadLibrary(
-			Platform.is64Bit() ? "canusbdrv64" : "canusbdrv",
-			NativeAccess.class);
-
 	// Status bits
 
 	/**

@@ -30,6 +30,7 @@ import com.sun.jna.Native;
 import com.sun.jna.NativeLong;
 import com.sun.jna.Platform;
 
+import de.hardwarespielerei.can.canusb.Library;
 import de.hardwarespielerei.can.canusb.Version;
 import de.hardwarespielerei.can.canusb.jna.NativeAccess;
 
@@ -62,68 +63,76 @@ public class NativeTest
 		System.out.println();
 		if (Platform.isWindows())
 		{
-			System.out.println("List of known adapters:");
-
-			// get first CANBUS adapter...
-			byte[] buffer = new byte[32];
-			int numberOfCANUSB = NativeAccess.INSTANCE.canusb_getFirstAdapter(
-					buffer, buffer.length);
-			String adapterID = Native.toString(buffer);
-			for (int i = 0; i < numberOfCANUSB; i++)
+			Library.load();
+			try
 			{
-				// open channel to CANBUS adapter to get its status and version
-				// info...
-				NativeLong handle = NativeAccess.INSTANCE.canusb_Open(
-						adapterID, "1000",
-						NativeAccess.CANUSB_ACCEPTANCE_CODE_ALL,
-						NativeAccess.CANUSB_ACCEPTANCE_MASK_ALL,
-						NativeAccess.CANUSB_FLAG_TIMESTAMP);
-				if (handle.longValue() <= 0)
-				{
-					throw new IOException("Error while opening CANUSB channel!");
-				}
-				try
-				{
-					// get the status...
-					int status = NativeAccess.INSTANCE.canusb_Status(handle);
+				System.out.println("List of known adapters:");
 
-					// get the version info...
-					byte[] info = Native
-							.toByteArray("VHhFf - Nxxxx - n.n.n - CCCCCCCCCC");
-					int rc = NativeAccess.INSTANCE.canusb_VersionInfo(handle,
-							info);
+				// get first CANBUS adapter...
+				byte[] buffer = new byte[32];
+				int numberOfCANUSB = Library.call().canusb_getFirstAdapter(
+						buffer, buffer.length);
+				String adapterID = Native.toString(buffer);
+				for (int i = 0; i < numberOfCANUSB; i++)
+				{
+					// open channel to CANBUS adapter to get its status and
+					// version
+					// info...
+					NativeLong handle = Library.call().canusb_Open(adapterID,
+							"1000", NativeAccess.CANUSB_ACCEPTANCE_CODE_ALL,
+							NativeAccess.CANUSB_ACCEPTANCE_MASK_ALL,
+							NativeAccess.CANUSB_FLAG_TIMESTAMP);
+					if (handle.longValue() <= 0)
+					{
+						throw new IOException(
+								"Error while opening CANUSB channel!");
+					}
+					try
+					{
+						// get the status...
+						int status = Library.call().canusb_Status(handle);
+
+						// get the version info...
+						byte[] info = Native
+								.toByteArray("VHhFf - Nxxxx - n.n.n - CCCCCCCCCC");
+						int rc = Library.call()
+								.canusb_VersionInfo(handle, info);
+						if (rc <= 0)
+						{
+							throw new IOException(
+									"Error while reading VersionInfo from CANUSB!");
+						}
+
+						// print list entry...
+						System.out.println(i + ". CANUSB-Adapter\tID="
+								+ adapterID + "\tVersionInfo="
+								+ Native.toString(info) + "\tStatus=" + status);
+					} finally
+					{
+						// close channel to CANBUS adapter
+						int rc = Library.call().canusb_Close(handle);
+						if (rc <= 0)
+						{
+							throw new IOException(
+									"Error while closing CANUSB channel!");
+						}
+					}
+
+					// get next CANBUS adapter...
+					int rc = Library.call().canusb_getNextAdapter(buffer,
+							buffer.length);
 					if (rc <= 0)
 					{
 						throw new IOException(
-								"Error while reading VersionInfo from CANUSB!");
+								"Error while listing CANUSB adapters!");
 					}
-
-					// print list entry...
-					System.out.println(i + ". CANUSB-Adapter\tID=" + adapterID
-							+ "\tVersionInfo=" + Native.toString(info)
-							+ "\tStatus=" + status);
-				} finally
-				{
-					// close channel to CANBUS adapter
-					int rc = NativeAccess.INSTANCE.canusb_Close(handle);
-					if (rc <= 0)
-					{
-						throw new IOException(
-								"Error while closing CANUSB channel!");
-					}
+					adapterID = Native.toString(buffer);
 				}
-
-				// get next CANBUS adapter...
-				int rc = NativeAccess.INSTANCE.canusb_getNextAdapter(buffer,
-						buffer.length);
-				if (rc <= 0)
-				{
-					throw new IOException(
-							"Error while listing CANUSB adapters!");
-				}
-				adapterID = Native.toString(buffer);
+				System.out.println("End of list.");
+			} finally
+			{
+				Library.unload();
 			}
-			System.out.println("End of list.");
 		} else
 		{
 			System.out.println("CANUSB is not supported on this platform!");
