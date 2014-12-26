@@ -100,6 +100,9 @@ public class Logger
 			{
 				System.err.println("ERROR: Can't close CANUSB properly!");
 				e.printStackTrace();
+			} finally
+			{
+				Library.unload();
 			}
 			System.out.println("INFO: CANUSB log ends.");
 		}
