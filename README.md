@@ -28,3 +28,8 @@ License
 =======
 
 CANUSBJNA is published under [MIT License](http://choosealicense.com/licenses/mit/).
+
+Links
+=======
+
+A similar library for the Tiny-CAN dongle is provided by the [TinyCANJNA](http://github.com/HardwareSpielerei/TinyCANJNA) project.
